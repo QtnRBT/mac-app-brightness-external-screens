@@ -7,6 +7,8 @@ struct MenuContentView: View {
     private let controller: DisplayController
     private let presentation: PanelPresentation
     @State private var launchAtLogin = LaunchAtLogin()
+    private let keyPreferences = BrightnessKeyPreferences.shared
+    private let keyAccess = AccessibilityPermission.shared
 
     init(controller: DisplayController, presentation: PanelPresentation) {
         self.controller = controller
@@ -21,6 +23,12 @@ struct MenuContentView: View {
                 get: { launchAtLogin.isEnabled },
                 set: { launchAtLogin.setEnabled($0) }
             ),
+            functionKeys: Binding(
+                get: { keyPreferences.functionKeysEnabled },
+                set: { keyPreferences.functionKeysEnabled = $0 }
+            ),
+            needsKeyAccess: !keyAccess.isTrusted,
+            onRequestKeyAccess: { keyAccess.request() },
             onChange: { id, value in controller.setBrightness(value, for: id) },
             onRefresh: { controller.refresh() },
             onQuit: { NSApp.terminate(nil) }
@@ -30,6 +38,7 @@ struct MenuContentView: View {
             // The user may have changed it in System Settings > Login Items.
             // (Screens are re-read by `StatusItemController` on every opening.)
             launchAtLogin.reload()
+            keyAccess.refresh()
         }
     }
 }
@@ -40,6 +49,9 @@ struct PanelView: View {
     let displays: [DisplayItem]
     let isRefreshing: Bool
     @Binding var launchAtLogin: Bool
+    @Binding var functionKeys: Bool
+    let needsKeyAccess: Bool
+    let onRequestKeyAccess: () -> Void
     let onChange: (CGDirectDisplayID, Double) -> Void
     let onRefresh: () -> Void
     let onQuit: () -> Void
@@ -50,6 +62,9 @@ struct PanelView: View {
             PanelFooterView(
                 isRefreshing: isRefreshing,
                 launchAtLogin: $launchAtLogin,
+                functionKeys: $functionKeys,
+                needsKeyAccess: needsKeyAccess,
+                onRequestKeyAccess: onRequestKeyAccess,
                 onRefresh: onRefresh,
                 onQuit: onQuit
             )
