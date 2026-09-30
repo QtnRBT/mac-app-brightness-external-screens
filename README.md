@@ -29,6 +29,8 @@ Ou seulement compiler : `make app` → `build/ScreenBrightness.app`.
 
 L'app est signée ad‑hoc : si Gatekeeper bloque un exemplaire copié depuis une autre machine, clic droit → Ouvrir.
 
+L'icône est un document Icon Composer (`Resources/AppIcon.icon`) compilé par `actool` (Xcode 26+) ; sans `actool`, le build embarque le repli plat `Resources/AppIcon.icns`, à régénérer avec `Resources/Icon/make-icns.sh` après toute retouche de l'icône.
+
 ## Architecture
 
 ```

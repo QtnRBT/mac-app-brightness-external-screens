@@ -1,0 +1,59 @@
+name: Build & Release
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # Apple Silicon runner with Xcode 26: the macOS 26 SDK is required for the
+    # Liquid Glass APIs, and the app is built for arm64 only.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build app
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            export VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          export BUILD_NUMBER="$GITHUB_RUN_NUMBER"
+          ./scripts/build-app.sh
+          otool -l build/ScreenBrightness.app/Contents/MacOS/ScreenBrightness | grep -E ' (minos|sdk) '
+          plutil -p build/ScreenBrightness.app/Contents/Info.plist
+
+      - name: Package
+        run: |
+          VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/ScreenBrightness.app/Contents/Info.plist)"
+          ZIP="build/ScreenBrightness-${VERSION}.zip"
+          # ditto keeps the bundle's signature and extended attributes intact.
+          ditto -c -k --keepParent build/ScreenBrightness.app "$ZIP"
+          shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ScreenBrightness
+          path: build/ScreenBrightness-*.zip*
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$ZIP" "$ZIP.sha256" \
+            --title "Screen Brightness ${GITHUB_REF_NAME#v}" \
+            --notes-file .github/release-notes.md \
+            --generate-notes \
+            --verify-tag
