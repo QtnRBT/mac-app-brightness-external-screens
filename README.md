@@ -38,7 +38,7 @@ L'icône est un document Icon Composer (`Resources/AppIcon.icon`) compilé par `
 
 ```
 Sources/ScreenBrightness/
-├── ScreenBrightnessApp.swift     MenuBarExtra (.window)
+├── ScreenBrightnessApp.swift     point d’entrée AppKit (app sans Dock)
 ├── Model/
 │   ├── DisplayItem.swift         un écran : nom, luminosité 0…1, backend
 │   └── DisplayController.swift   état observable, écritures coalescées, refresh auto
