@@ -12,7 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = MainMenu.make(settings: settings)
 
         let displays = DisplayController()
-        let statusItemController = StatusItemController(controller: displays)
+        let statusItemController = StatusItemController(controller: displays) { [settings] in
+            settings.showWindow(nil)
+        }
         self.statusItemController = statusItemController
 
         // Keyboard brightness keys → screen under the pointer.

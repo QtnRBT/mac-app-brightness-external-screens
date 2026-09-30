@@ -12,6 +12,7 @@ final class StatusItemController: NSObject {
     private static let screenMargin: CGFloat = 8
 
     private let controller: DisplayController
+    private let onOpenSettings: () -> Void
     private let statusItem: NSStatusItem
     private let panel = FloatingPanel()
     private let presentation = PanelPresentation()
@@ -24,8 +25,9 @@ final class StatusItemController: NSObject {
     private var monitors: [Any] = []
     private var activationObserver: NSObjectProtocol?
 
-    init(controller: DisplayController) {
+    init(controller: DisplayController, onOpenSettings: @escaping () -> Void) {
         self.controller = controller
+        self.onOpenSettings = onOpenSettings
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
 
@@ -73,7 +75,10 @@ final class StatusItemController: NSObject {
         // A fresh hierarchy per opening, like a menu: `onAppear` runs again and
         // the sliders' scroll-wheel monitors are torn down on close.
         presentation.isPresented = false
-        let hostingView = PanelHostingView(rootView: MenuContentView(controller: controller, presentation: presentation))
+        let content = MenuContentView(controller: controller, presentation: presentation) { [weak self] in
+            self?.openSettings()
+        }
+        let hostingView = PanelHostingView(rootView: content)
         hostingView.onSizeChange = { [weak self] in self?.layoutPanel() }
         panel.contentView = hostingView
         anchor = Self.findAnchor(statusItem: statusItem, excluding: panel)
@@ -102,6 +107,13 @@ final class StatusItemController: NSObject {
             self.panel.orderOut(nil)
             self.panel.contentView = nil
         }
+    }
+
+    /// "Réglages…" (or ⌘,) in the panel: the panel animates out while the
+    /// settings window comes up.
+    private func openSettings() {
+        closePanel()
+        onOpenSettings()
     }
 
     private func setButtonHighlighted(_ highlighted: Bool) {
