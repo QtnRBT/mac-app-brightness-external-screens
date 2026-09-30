@@ -14,6 +14,7 @@ final class StatusItemController: NSObject {
     private let controller: DisplayController
     private let statusItem: NSStatusItem
     private let panel = FloatingPanel()
+    private var anchor: Anchor?
     private var monitors: [Any] = []
     private var activationObserver: NSObjectProtocol?
 
@@ -55,6 +56,7 @@ final class StatusItemController: NSObject {
         let hostingView = PanelHostingView(rootView: MenuContentView(controller: controller))
         hostingView.onSizeChange = { [weak self] in self?.layoutPanel() }
         panel.contentView = hostingView
+        anchor = Self.findAnchor(statusItem: statusItem, excluding: panel)
         layoutPanel()
 
         panel.alphaValue = 0
@@ -93,27 +95,62 @@ final class StatusItemController: NSObject {
     /// item: modules right-aligned with the icon (Control Center's anchoring),
     /// clamped inside the screen, top kept just under the menu bar.
     private func layoutPanel() {
-        guard let hostingView = panel.contentView else { return }
+        guard let hostingView = panel.contentView, let anchor else { return }
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
 
         let inset = ModuleMetrics.panelPadding
-        guard let button = statusItem.button, let buttonWindow = button.window,
-              let screen = buttonWindow.screen ?? NSScreen.main else {
-            panel.setContentSize(size)
-            return
-        }
-        let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-        let visible = screen.visibleFrame
-        let menuBarBottom = min(buttonFrame.minY, visible.maxY)
+        let screenFrame = anchor.screen.frame
+        let menuBarBottom = min(anchor.itemFrame.minY, anchor.screen.visibleFrame.maxY)
 
-        var x = buttonFrame.maxX + inset - size.width
-        let minX = screen.frame.minX + Self.screenMargin - inset
-        let maxX = screen.frame.maxX - Self.screenMargin + inset - size.width
+        var x = anchor.itemFrame.maxX + inset - size.width
+        let minX = screenFrame.minX + Self.screenMargin - inset
+        let maxX = screenFrame.maxX - Self.screenMargin + inset - size.width
         x = min(max(x, minX), maxX)
         let top = menuBarBottom - Self.menuBarGap + inset
 
         panel.setFrame(NSRect(x: x, y: top - size.height, width: size.width, height: size.height), display: true)
+    }
+
+    /// Frame (screen coordinates) of the menu bar item the panel hangs from,
+    /// and its screen. With "displays have separate Spaces", the item is
+    /// replicated in every screen's menu bar, each copy in its own window:
+    /// use the copy that was clicked, otherwise the one on the screen with the
+    /// pointer, otherwise the one on the main menu bar.
+    /// Copies parked off-screen (hidden menu bars) are ignored.
+    private static func findAnchor(statusItem: NSStatusItem, excluding panel: NSWindow) -> Anchor? {
+        func anchor(for window: NSWindow?) -> Anchor? {
+            guard let window, window !== panel else { return nil }
+            let center = NSPoint(x: window.frame.midX, y: window.frame.midY)
+            guard let screen = NSScreen.screens.first(where: { $0.frame.contains(center) }) else { return nil }
+            return Anchor(itemFrame: window.frame, screen: screen)
+        }
+
+        if let event = NSApp.currentEvent,
+           [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp].contains(event.type),
+           let clicked = anchor(for: event.window) {
+            return clicked
+        }
+
+        // Besides the panel, the app's only windows are the item's copies.
+        let itemWindows = NSApp.windows.filter { $0 !== panel && $0.frame.height < 60 }
+        let candidates = ([statusItem.button?.window] + itemWindows).compactMap(anchor(for:))
+        let mouse = NSEvent.mouseLocation
+        if let best = candidates.first(where: { $0.screen.frame.contains(mouse) })
+            ?? candidates.first(where: { $0.screen == NSScreen.screens.first })
+            ?? candidates.first {
+            return best
+        }
+
+        // Item not laid out (e.g. menu bar hidden): top-right of the main screen.
+        guard let screen = NSScreen.screens.first else { return nil }
+        let visible = screen.visibleFrame
+        return Anchor(itemFrame: NSRect(x: visible.maxX, y: visible.maxY, width: 0, height: 0), screen: screen)
+    }
+
+    private struct Anchor {
+        let itemFrame: NSRect
+        let screen: NSScreen
     }
 
     // MARK: - Dismissal
