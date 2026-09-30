@@ -5,10 +5,12 @@ import SwiftUI
 /// `DisplayListView` and `PanelFooterView`.
 struct MenuContentView: View {
     private let controller: DisplayController
+    private let presentation: PanelPresentation
     @State private var launchAtLogin = LaunchAtLogin()
 
-    init(controller: DisplayController) {
+    init(controller: DisplayController, presentation: PanelPresentation) {
         self.controller = controller
+        self.presentation = presentation
     }
 
     var body: some View {
@@ -23,6 +25,7 @@ struct MenuContentView: View {
             onRefresh: { controller.refresh() },
             onQuit: { NSApp.terminate(nil) }
         )
+        .panelPresentation(presentation)
         .onAppear {
             // The user may have changed it in System Settings > Login Items.
             // (Screens are re-read by `StatusItemController` on every opening.)

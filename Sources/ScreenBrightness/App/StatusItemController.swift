@@ -14,6 +14,8 @@ final class StatusItemController: NSObject {
     private let controller: DisplayController
     private let statusItem: NSStatusItem
     private let panel = FloatingPanel()
+    private let presentation = PanelPresentation()
+    private var isClosing = false
     private var anchor: Anchor?
     private var monitors: [Any] = []
     private var activationObserver: NSObjectProtocol?
@@ -33,7 +35,7 @@ final class StatusItemController: NSObject {
         }
     }
 
-    var isPanelShown: Bool { panel.isVisible }
+    var isPanelShown: Bool { panel.isVisible && !isClosing }
 
     @objc private func statusItemClicked(_ sender: Any?) {
         if isPanelShown {
@@ -47,23 +49,31 @@ final class StatusItemController: NSObject {
 
     func showPanel() {
         guard !isPanelShown else { return }
+        if isClosing {
+            // Re-opened mid-close: animate back in from the current state.
+            isClosing = false
+            installMonitors()
+            setButtonHighlighted(true)
+            withAnimation(PanelPresentation.showAnimation) { presentation.isPresented = true }
+            return
+        }
 
         // Pick up changes made with the monitors' own buttons.
         controller.refresh()
 
         // A fresh hierarchy per opening, like a menu: `onAppear` runs again and
         // the sliders' scroll-wheel monitors are torn down on close.
-        let hostingView = PanelHostingView(rootView: MenuContentView(controller: controller))
+        presentation.isPresented = false
+        let hostingView = PanelHostingView(rootView: MenuContentView(controller: controller, presentation: presentation))
         hostingView.onSizeChange = { [weak self] in self?.layoutPanel() }
         panel.contentView = hostingView
         anchor = Self.findAnchor(statusItem: statusItem, excluding: panel)
         layoutPanel()
 
-        panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.12
-            panel.animator().alphaValue = 1
+        // Next turn, so the hidden state is rendered once before animating.
+        DispatchQueue.main.async { [presentation] in
+            withAnimation(PanelPresentation.showAnimation) { presentation.isPresented = true }
         }
 
         installMonitors()
@@ -72,10 +82,17 @@ final class StatusItemController: NSObject {
 
     func closePanel() {
         guard isPanelShown else { return }
+        isClosing = true
         removeMonitors()
-        panel.orderOut(nil)
-        panel.contentView = nil
         setButtonHighlighted(false)
+        withAnimation(PanelPresentation.hideAnimation, completionCriteria: .logicallyComplete) {
+            presentation.isPresented = false
+        } completion: { [weak self] in
+            guard let self, self.isClosing else { return } // re-opened meanwhile
+            self.isClosing = false
+            self.panel.orderOut(nil)
+            self.panel.contentView = nil
+        }
     }
 
     private func setButtonHighlighted(_ highlighted: Bool) {
@@ -110,6 +127,8 @@ final class StatusItemController: NSObject {
         let top = menuBarBottom - Self.menuBarGap + inset
 
         panel.setFrame(NSRect(x: x, y: top - size.height, width: size.width, height: size.height), display: true)
+        let iconX = (anchor.itemFrame.midX - x) / size.width
+        presentation.anchor = UnitPoint(x: min(max(iconX, 0), 1), y: 0)
     }
 
     /// Frame (screen coordinates) of the menu bar item the panel hangs from,
