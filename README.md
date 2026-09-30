@@ -10,6 +10,7 @@ Petite app de barre des menus macOS pour régler la luminosité **de chaque écr
 - Détection automatique au branchement / débranchement / réveil.
 - **Touches de luminosité du clavier** : elles règlent l'écran sous le pointeur, comme sur un MacBook (pas de 1/16, ou 1/64 avec ⌥⇧), avec un indicateur Liquid Glass en haut à droite de cet écran. Option « Touches F1/F2 pour la luminosité » pour les claviers qui envoient F1/F2 au lieu des codes de luminosité.
 - Fenêtre **Réglages** (bouton « Réglages… » du panneau, ou ⌘,) au style des Réglages Système : ouverture au démarrage, accès des touches de luminosité, option F1/F2.
+- **Raccourcis clavier globaux**, configurables dans les Réglages et sans autorisation : ⌃⌥↑ / ⌃⌥↓ pour l'écran sous le pointeur, ⌃⌥⌘↑ / ⌃⌥⌘↓ pour tous les écrans (niveau maître, proportions conservées), et un raccourci au choix pour afficher le panneau. Maintenus, ceux de luminosité se répètent.
 
 ## Prérequis
 
@@ -49,6 +50,7 @@ Sources/ScreenBrightness/
 │   ├── GammaDimmer.swift         gradation logicielle : table gamma d'origine × facteur
 │   └── DisplayHardware.swift     découverte + routage, répartition DDC / gamma (seuil 20 %)
 ├── Keys/                         touches de luminosité : event tap, décodage, accès Accessibilité
+├── Shortcuts/                    raccourcis globaux : hot keys Carbon, enregistreur, préférences
 ├── Settings/                     fenêtre Réglages (Form groupé SwiftUI, une vue par section)
 └── UI/                           panneau façon Centre de contrôle, indicateur (OSD)
 ```

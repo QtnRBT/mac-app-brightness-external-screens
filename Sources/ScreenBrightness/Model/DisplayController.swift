@@ -79,6 +79,17 @@ final class DisplayController {
         }
     }
 
+    /// Moves the master level one step of `delta`, like `adjustBrightness`
+    /// does for one screen, keeping the screens' proportions. Returns the new
+    /// master level, or `nil` when there is no master (fewer than two
+    /// controllable screens).
+    @discardableResult
+    func adjustMasterBrightness(by delta: Double) -> Double? {
+        guard let level = masterBrightness else { return nil }
+        setMasterBrightness(Self.steppedBrightness(from: level, by: delta))
+        return masterBrightness
+    }
+
     /// Each display's brightness relative to the brightest one (1 for all
     /// when every screen is at 0, so the master then moves them together).
     nonisolated static func masterRatios(for displays: [DisplayItem]) -> [CGDirectDisplayID: Double] {
