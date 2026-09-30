@@ -4,11 +4,18 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
+    private var brightnessKeys: BrightnessKeyController?
     private let osd = OSDController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let statusItemController = StatusItemController(controller: DisplayController())
+        let displays = DisplayController()
+        let statusItemController = StatusItemController(controller: displays)
         self.statusItemController = statusItemController
+
+        // Keyboard brightness keys → screen under the pointer.
+        let brightnessKeys = BrightnessKeyController(displays: displays, osd: osd)
+        brightnessKeys.start()
+        self.brightnessKeys = brightnessKeys
 
         // `open ScreenBrightness.app --args --show-panel`: opens the panel on
         // its own shortly after launch, for screenshots. Never passed in
