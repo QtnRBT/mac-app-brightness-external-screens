@@ -39,7 +39,8 @@ jobs:
           ZIP="build/ScreenBrightness-${VERSION}.zip"
           # ditto keeps the bundle's signature and extended attributes intact.
           ditto -c -k --keepParent build/ScreenBrightness.app "$ZIP"
-          shasum -a 256 "$ZIP" | tee "$ZIP.sha256"
+          # Checksum by file name only, so `shasum -c` works next to the download.
+          (cd build && shasum -a 256 "$(basename "$ZIP")") | tee "$ZIP.sha256"
           echo "ZIP=$ZIP" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v7
