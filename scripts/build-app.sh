@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Builds a release binary and wraps it in build/ScreenBrightness.app (ad-hoc signed).
+# Optional env: VERSION (e.g. 1.2.0) and BUILD_NUMBER override the Info.plist ones.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -18,6 +19,12 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/ScreenBrightness"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [[ -n "${VERSION:-}" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
+fi
+if [[ -n "${BUILD_NUMBER:-}" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
+fi
 codesign --force --sign - "$APP"
 
 echo "Built $APP"
