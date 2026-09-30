@@ -35,7 +35,11 @@ final class BrightnessKeyController {
 
     private func updateTap() {
         if permission.isTrusted {
-            tap.start()
+            // Right after the switch is flipped, trust can be reported a
+            // moment before the tap is allowed: retry until it installs.
+            if !tap.start() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.updateTap() }
+            }
         } else {
             tap.stop()
         }
