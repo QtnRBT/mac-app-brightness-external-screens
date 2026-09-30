@@ -47,7 +47,24 @@ struct PanelFooterView: View {
                 }
                 .keyboardShortcut("q")
             }
-            .buttonStyle(CapsuleButtonStyle())
+            .footerButtonStyle()
+        }
+    }
+}
+
+private extension View {
+    /// The system glass button on macOS 26+ (it gets Liquid Glass's press
+    /// reaction for free, as Apple recommends over custom glass buttons);
+    /// the hand-made capsule before.
+    @ViewBuilder
+    func footerButtonStyle() -> some View {
+        if #available(macOS 26.0, *) {
+            buttonStyle(.glass)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .font(.system(size: 11, weight: .medium))
+        } else {
+            buttonStyle(CapsuleButtonStyle())
         }
     }
 }
