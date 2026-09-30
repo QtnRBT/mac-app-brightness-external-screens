@@ -19,6 +19,7 @@ struct MenuContentView: View {
         PanelView(
             displays: controller.displays,
             isRefreshing: controller.isRefreshing,
+            masterBrightness: controller.masterBrightness,
             launchAtLogin: Binding(
                 get: { launchAtLogin.isEnabled },
                 set: { launchAtLogin.setEnabled($0) }
@@ -30,6 +31,7 @@ struct MenuContentView: View {
             needsKeyAccess: !keyAccess.isTrusted,
             onRequestKeyAccess: { keyAccess.request() },
             onChange: { id, value in controller.setBrightness(value, for: id) },
+            onMasterChange: { controller.setMasterBrightness($0) },
             onRefresh: { controller.refresh() },
             onQuit: { NSApp.terminate(nil) }
         )
@@ -48,17 +50,25 @@ struct MenuContentView: View {
 struct PanelView: View {
     let displays: [DisplayItem]
     let isRefreshing: Bool
+    let masterBrightness: Double?
     @Binding var launchAtLogin: Bool
     @Binding var functionKeys: Bool
     let needsKeyAccess: Bool
     let onRequestKeyAccess: () -> Void
     let onChange: (CGDirectDisplayID, Double) -> Void
+    let onMasterChange: (Double) -> Void
     let onRefresh: () -> Void
     let onQuit: () -> Void
 
     var body: some View {
         VStack(spacing: ModuleMetrics.moduleSpacing) {
-            DisplayListView(displays: displays, isRefreshing: isRefreshing, onChange: onChange)
+            DisplayListView(
+                displays: displays,
+                isRefreshing: isRefreshing,
+                masterBrightness: masterBrightness,
+                onChange: onChange,
+                onMasterChange: onMasterChange
+            )
             PanelFooterView(
                 isRefreshing: isRefreshing,
                 launchAtLogin: $launchAtLogin,
