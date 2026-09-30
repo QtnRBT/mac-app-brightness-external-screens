@@ -12,6 +12,7 @@ struct SettingsView: View {
         Form {
             GeneralSettingsSection(launchAtLogin: launchAtLogin)
             KeyboardSettingsSection()
+            ShortcutsSettingsSection()
             AboutSettingsSection()
         }
         .formStyle(.grouped)
