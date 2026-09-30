@@ -29,6 +29,7 @@ struct MenuContentView: View {
             onQuit: { NSApp.terminate(nil) }
         )
         .panelPresentation(presentation)
+        .panelBackdrop()
         .onAppear {
             // Screens are re-read by `StatusItemController` on every opening.
             keyAccess.refresh()
