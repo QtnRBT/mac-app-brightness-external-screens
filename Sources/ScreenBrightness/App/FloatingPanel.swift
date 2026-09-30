@@ -28,6 +28,31 @@ final class FloatingPanel: NSPanel {
     // activating the app (and stealing focus from the frontmost one).
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    // MARK: - Backdrop
+
+    /// Control Center's blur under the modules, in a child window.
+    private let backdrop = PanelBackdropWindow()
+
+    /// Fades the backdrop in or out with the content. Show it once the panel
+    /// is on screen.
+    func setBackdropVisible(_ visible: Bool) {
+        if visible {
+            backdrop.show(under: self)
+        } else {
+            backdrop.hide()
+        }
+    }
+
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        super.setFrame(frameRect, display: flag)
+        backdrop.follow(self)
+    }
+
+    override func orderOut(_ sender: Any?) {
+        backdrop.detach()
+        super.orderOut(sender)
+    }
 }
 
 /// Hosting view with a clear background that reports SwiftUI size changes
