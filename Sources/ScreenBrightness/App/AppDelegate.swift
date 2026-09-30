@@ -18,7 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.statusItemController = statusItemController
 
         // Keyboard brightness keys → screen under the pointer.
-        let brightnessKeys = BrightnessKeyController(displays: displays, osd: osd)
+        let stepper = BrightnessStepper(displays: displays, osd: osd)
+        let brightnessKeys = BrightnessKeyController(stepper: stepper)
         brightnessKeys.start()
         self.brightnessKeys = brightnessKeys
 
