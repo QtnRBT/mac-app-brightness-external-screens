@@ -3,7 +3,8 @@ import IOKit
 
 /// Enumerates screens and reads/writes their brightness.
 /// Must only be used from one serial queue (see DisplayController).
-final class DisplayHardware {
+/// `@unchecked Sendable`: confinement to that queue is what makes it safe.
+final class DisplayHardware: @unchecked Sendable {
     private struct DDCTarget {
         let channel: DDCChannel
         let maxValue: Int
