@@ -5,6 +5,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
     private var brightnessKeys: BrightnessKeyController?
+    private var shortcuts: ShortcutController?
     private let osd = OSDController()
     private let settings = SettingsWindowController()
 
@@ -22,6 +23,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let brightnessKeys = BrightnessKeyController(stepper: stepper)
         brightnessKeys.start()
         self.brightnessKeys = brightnessKeys
+
+        // Global shortcuts (Carbon hot keys: no permission needed).
+        let shortcuts = ShortcutController { action in
+            switch action {
+            case .brightnessUp: stepper.stepScreenUnderPointer(by: BrightnessStepper.step)
+            case .brightnessDown: stepper.stepScreenUnderPointer(by: -BrightnessStepper.step)
+            case .allScreensUp: stepper.stepAllScreens(by: BrightnessStepper.step)
+            case .allScreensDown: stepper.stepAllScreens(by: -BrightnessStepper.step)
+            case .togglePanel:
+                if statusItemController.isPanelShown {
+                    statusItemController.closePanel()
+                } else {
+                    statusItemController.showPanel()
+                }
+            }
+        }
+        shortcuts.start()
+        self.shortcuts = shortcuts
 
         // `open ScreenBrightness.app --args --show-panel`: opens the panel on
         // its own shortly after launch, for screenshots. Never passed in

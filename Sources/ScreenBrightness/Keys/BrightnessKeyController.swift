@@ -53,6 +53,9 @@ final class BrightnessKeyController {
 /// press does. Shared by the brightness keys and the global shortcuts.
 @MainActor
 struct BrightnessStepper {
+    /// A regular brightness key press: 1/16 of the range.
+    static let step = 1.0 / 16
+
     let displays: DisplayController
     let osd: OSDController
 
@@ -62,5 +65,17 @@ struct BrightnessStepper {
         guard let display = displays.displayUnderPointer(), display.isControllable,
               let level = displays.adjustBrightness(by: delta, for: display.id) else { return }
         osd.show(level: level, on: display.id)
+    }
+
+    /// Steps every controllable screen together (the master level, keeping
+    /// their proportions) and shows that level on the pointer's screen.
+    /// With a single controllable screen, steps that one.
+    func stepAllScreens(by delta: Double) {
+        let controllable = displays.displays.filter(\.isControllable)
+        let level = controllable.count == 1
+            ? displays.adjustBrightness(by: delta, for: controllable[0].id)
+            : displays.adjustMasterBrightness(by: delta)
+        guard let level else { return }
+        osd.show(level: level, on: displays.displayUnderPointer()?.id ?? CGMainDisplayID())
     }
 }
