@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Metrics shared by every Control Center–style module in the panel.
 enum ModuleMetrics {
-    static let cornerRadius: CGFloat = 20
-    static let panelWidth: CGFloat = 300
+    static let cornerRadius: CGFloat = 22
+    static let panelWidth: CGFloat = 316
     static let panelPadding: CGFloat = 12
     static let moduleSpacing: CGFloat = 10
 }

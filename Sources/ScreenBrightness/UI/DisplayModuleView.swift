@@ -7,7 +7,7 @@ struct DisplayModuleView: View {
     let onChange: (Double) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(display.name)
                     .font(.system(size: 13, weight: .semibold))
@@ -24,7 +24,7 @@ struct DisplayModuleView: View {
                 }
             }
 
-            HStack(spacing: 7) {
+            HStack(spacing: 8) {
                 Image(systemName: "sun.min.fill")
                     .font(.system(size: 11, weight: .regular))
                     .frame(width: 14)
@@ -51,8 +51,8 @@ struct DisplayModuleView: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.top, 11)
-        .padding(.bottom, display.isControllable ? 7 : 10)
+        .padding(.top, 12)
+        .padding(.bottom, display.isControllable ? 10 : 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .moduleBackground()
         .accessibilityElement(children: .contain)
