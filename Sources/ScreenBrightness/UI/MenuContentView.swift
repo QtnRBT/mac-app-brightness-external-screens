@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Root of the `MenuBarExtra` window: binds `DisplayController` to the pure
+/// Root of the menu bar panel: binds `DisplayController` to the pure
 /// `DisplayListView` and `PanelFooterView`.
 struct MenuContentView: View {
     private let controller: DisplayController
@@ -24,8 +24,8 @@ struct MenuContentView: View {
             onQuit: { NSApp.terminate(nil) }
         )
         .onAppear {
-            // Pick up changes made with the monitors' physical buttons.
-            controller.refresh()
+            // The user may have changed it in System Settings > Login Items.
+            // (Screens are re-read by `StatusItemController` on every opening.)
             launchAtLogin.reload()
         }
     }

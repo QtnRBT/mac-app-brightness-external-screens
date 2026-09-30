@@ -2,14 +2,15 @@ import SwiftUI
 
 @main
 struct ScreenBrightnessApp: App {
-    @State private var controller = DisplayController()
+    // The menu bar item and its transparent panel are AppKit-driven (see
+    // `StatusItemController`); SwiftUI only renders the panel's content.
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra {
-            MenuContentView(controller: controller)
-        } label: {
-            Image(systemName: "sun.max.fill")
+        // An App needs at least one scene; this one is never shown
+        // (LSUIElement app, no main menu).
+        Settings {
+            EmptyView()
         }
-        .menuBarExtraStyle(.window)
     }
 }
