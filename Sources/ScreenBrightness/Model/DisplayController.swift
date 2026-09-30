@@ -28,6 +28,8 @@ final class DisplayController {
         let names = Self.screenNames()
         queue.async { [hardware] in
             let found = hardware.discover(names: names)
+            // macOS resets gamma on reconfiguration / wake: put dims back.
+            hardware.reapplySoftwareDimming()
             DispatchQueue.main.async {
                 // A slider still being written wins over the (older) reading.
                 self.displays = found.map { item in
@@ -88,6 +90,14 @@ final class DisplayController {
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.scheduleRefresh() }
+        }
+
+        // Never leave a screen dimmed in software once the app is gone.
+        // `sync` runs after any write still queued, so none can re-dim.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [queue, hardware] _ in
+            queue.sync { hardware.restoreSoftwareDimming() }
         }
     }
 
