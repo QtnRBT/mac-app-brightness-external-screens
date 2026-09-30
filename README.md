@@ -9,7 +9,7 @@ Petite app de barre des menus macOS pour régler la luminosité **de chaque écr
 - Écran intégré (MacBook, iMac) piloté via le framework système DisplayServices.
 - Détection automatique au branchement / débranchement / réveil.
 - **Touches de luminosité du clavier** : elles règlent l'écran sous le pointeur, comme sur un MacBook (pas de 1/16, ou 1/64 avec ⌥⇧), avec un indicateur Liquid Glass en haut à droite de cet écran. Option « Touches F1/F2 pour la luminosité » pour les claviers qui envoient F1/F2 au lieu des codes de luminosité.
-- Option « Ouvrir au démarrage ».
+- Fenêtre **Réglages** (bouton « Réglages… » du panneau, ou ⌘,) au style des Réglages Système : ouverture au démarrage, accès des touches de luminosité, option F1/F2.
 
 ## Prérequis
 
@@ -20,7 +20,7 @@ Petite app de barre des menus macOS pour régler la luminosité **de chaque écr
 
 > ⚠️ Sur le port HDMI intégré de certains Mac (Mac mini M1, MacBook Pro M1/M2), le DDC ne passe pas : préférez USB‑C/DisplayPort. L'écran est alors assombri uniquement en logiciel (gamma), sans toucher au rétroéclairage.
 
-> ⌨️ Les touches de luminosité passent par un *event tap*, qui exige l'accès **Accessibilité** : cliquez « Autoriser les touches de luminosité… » dans le panneau, puis activez Screen Brightness dans Réglages Système › Confidentialité et sécurité › Accessibilité (pris en compte sans relancer). L'app étant signée ad‑hoc, cette autorisation est à refaire après chaque recompilation (retirer l'app de la liste avec « − », puis l'y réautoriser).
+> ⌨️ Les touches de luminosité passent par un *event tap*, qui exige l'accès **Accessibilité** : cliquez « Autoriser les touches de luminosité… » dans le panneau (ou « Autoriser… » dans les Réglages), puis activez Screen Brightness dans Réglages Système › Confidentialité et sécurité › Accessibilité (pris en compte sans relancer). L'app étant signée ad‑hoc, cette autorisation est à refaire après chaque recompilation (retirer l'app de la liste avec « − », puis l'y réautoriser).
 
 ## Installer
 
@@ -49,6 +49,7 @@ Sources/ScreenBrightness/
 │   ├── GammaDimmer.swift         gradation logicielle : table gamma d'origine × facteur
 │   └── DisplayHardware.swift     découverte + routage, répartition DDC / gamma (seuil 20 %)
 ├── Keys/                         touches de luminosité : event tap, décodage, accès Accessibilité
+├── Settings/                     fenêtre Réglages (Form groupé SwiftUI, une vue par section)
 └── UI/                           panneau façon Centre de contrôle, indicateur (OSD)
 ```
 
