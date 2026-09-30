@@ -6,16 +6,23 @@ import SwiftUI
 struct DisplayListView: View {
     let displays: [DisplayItem]
     let isRefreshing: Bool
+    /// Level of the "all screens" module; `nil` hides it.
+    let masterBrightness: Double?
     let onChange: (CGDirectDisplayID, Double) -> Void
+    let onMasterChange: (Double) -> Void
 
     init(
         displays: [DisplayItem],
         isRefreshing: Bool = false,
-        onChange: @escaping (CGDirectDisplayID, Double) -> Void
+        masterBrightness: Double? = nil,
+        onChange: @escaping (CGDirectDisplayID, Double) -> Void,
+        onMasterChange: @escaping (Double) -> Void = { _ in }
     ) {
         self.displays = displays
         self.isRefreshing = isRefreshing
+        self.masterBrightness = masterBrightness
         self.onChange = onChange
+        self.onMasterChange = onMasterChange
     }
 
     var body: some View {
@@ -29,6 +36,16 @@ struct DisplayListView: View {
     @ViewBuilder
     private var modules: some View {
         let stack = VStack(spacing: ModuleMetrics.moduleSpacing) {
+            if let masterBrightness {
+                BrightnessModuleView(
+                    title: "Tous les écrans",
+                    brightness: masterBrightness,
+                    isEnabled: true,
+                    caption: nil,
+                    accessibilityLabel: "Luminosité de tous les écrans",
+                    onChange: onMasterChange
+                )
+            }
             ForEach(displays) { display in
                 DisplayModuleView(display: display) { value in
                     onChange(display.id, value)

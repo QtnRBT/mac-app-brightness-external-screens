@@ -15,6 +15,10 @@ final class DisplayController {
     @ObservationIgnored private var pendingWrites: [CGDirectDisplayID: Double] = [:]
     @ObservationIgnored private var writeScheduled: Set<CGDirectDisplayID> = []
     @ObservationIgnored private var refreshWorkItem: DispatchWorkItem?
+    /// Each screen's share of the brightest one, captured the first time the
+    /// master slider moves, so dragging it to black and back restores the
+    /// original differences. Dropped when a single screen is set on its own.
+    @ObservationIgnored private var masterRatios: [CGDirectDisplayID: Double]?
 
     init() {
         refresh()
@@ -31,6 +35,9 @@ final class DisplayController {
             // macOS resets gamma on reconfiguration / wake: put dims back.
             hardware.reapplySoftwareDimming()
             DispatchQueue.main.async {
+                if Set(found.map(\.id)) != Set(self.displays.map(\.id)) {
+                    self.masterRatios = nil
+                }
                 // A slider still being written wins over the (older) reading.
                 self.displays = found.map { item in
                     guard self.writeScheduled.contains(item.id),
@@ -47,6 +54,41 @@ final class DisplayController {
     /// Sets brightness (0...1). Updates the UI immediately and coalesces the
     /// hardware writes so dragging a slider never floods the DDC bus.
     func setBrightness(_ value: Double, for id: CGDirectDisplayID) {
+        masterRatios = nil
+        apply(value, for: id)
+    }
+
+    /// Level shown by the master slider: the brightest controllable screen.
+    /// `nil` when fewer than two screens can be controlled.
+    var masterBrightness: Double? {
+        let controllable = displays.filter(\.isControllable)
+        guard controllable.count >= 2 else { return nil }
+        return controllable.map(\.brightness).max()
+    }
+
+    /// Moves every controllable screen together, proportionally: the
+    /// brightest one goes to `value`, the others keep their share of it.
+    func setMasterBrightness(_ value: Double) {
+        let controllable = displays.filter(\.isControllable)
+        guard controllable.count >= 2 else { return }
+        let ratios = masterRatios ?? Self.masterRatios(for: controllable)
+        masterRatios = ratios
+        let clamped = min(max(value, 0), 1)
+        for display in controllable {
+            apply(clamped * (ratios[display.id] ?? 1), for: display.id)
+        }
+    }
+
+    /// Each display's brightness relative to the brightest one (1 for all
+    /// when every screen is at 0, so the master then moves them together).
+    nonisolated static func masterRatios(for displays: [DisplayItem]) -> [CGDirectDisplayID: Double] {
+        let top = displays.map(\.brightness).max() ?? 0
+        return Dictionary(uniqueKeysWithValues: displays.map {
+            ($0.id, top > 0 ? min(max($0.brightness / top, 0), 1) : 1)
+        })
+    }
+
+    private func apply(_ value: Double, for id: CGDirectDisplayID) {
         let clamped = min(max(value, 0), 1)
         guard let index = displays.firstIndex(where: { $0.id == id }),
               displays[index].isControllable else { return }

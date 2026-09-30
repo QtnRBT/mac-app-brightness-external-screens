@@ -1,9 +1,40 @@
 import SwiftUI
 
-/// One Control Center–style module for a single screen: bold title, subtle
-/// percentage, and a sun / slider / sun row.
+/// One Control Center–style module for a single screen.
 struct DisplayModuleView: View {
     let display: DisplayItem
+    let onChange: (Double) -> Void
+
+    var body: some View {
+        BrightnessModuleView(
+            title: display.name,
+            brightness: display.brightness,
+            isEnabled: display.isControllable,
+            caption: caption,
+            accessibilityLabel: "Luminosité de \(display.name)",
+            onChange: onChange
+        )
+    }
+
+    /// Small secondary line under the slider, only when there is something
+    /// the user should know.
+    private var caption: String? {
+        switch display.backend {
+        case .unsupported: "DDC non supporté par cet écran"
+        case .software: "Atténuation logicielle"
+        case .builtIn, .ddc: nil
+        }
+    }
+}
+
+/// Control Center–style brightness module: bold title, subtle percentage,
+/// and a sun / slider / sun row. Used per screen and for "all screens".
+struct BrightnessModuleView: View {
+    let title: String
+    let brightness: Double
+    let isEnabled: Bool
+    let caption: String?
+    let accessibilityLabel: String
     let onChange: (Double) -> Void
 
     @State private var isHovering = false
@@ -11,14 +42,14 @@ struct DisplayModuleView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
-                Text(display.name)
+                Text(title)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: 8)
-                if display.isControllable {
-                    Text("\(Int((display.brightness * 100).rounded())) %")
+                if isEnabled {
+                    Text("\(Int((brightness * 100).rounded())) %")
                         .font(.system(size: 11, weight: .regular))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
@@ -32,10 +63,10 @@ struct DisplayModuleView: View {
                     .frame(width: 14)
                     .accessibilityHidden(true)
                 BrightnessSlider(
-                    value: display.brightness,
-                    isEnabled: display.isControllable,
+                    value: brightness,
+                    isEnabled: isEnabled,
                     showsKnob: isHovering,
-                    accessibilityLabel: "Luminosité de \(display.name)",
+                    accessibilityLabel: accessibilityLabel,
                     onChange: onChange
                 )
                 Image(systemName: "sun.max.fill")
@@ -44,7 +75,7 @@ struct DisplayModuleView: View {
                     .accessibilityHidden(true)
             }
             .foregroundStyle(.secondary)
-            .opacity(display.isControllable ? 1 : 0.5)
+            .opacity(isEnabled ? 1 : 0.5)
 
             if let caption {
                 Text(caption)
@@ -63,13 +94,4 @@ struct DisplayModuleView: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// Small secondary line under the slider, only when there is something
-    /// the user should know.
-    private var caption: String? {
-        switch display.backend {
-        case .unsupported: "DDC non supporté par cet écran"
-        case .software: "Atténuation logicielle"
-        case .builtIn, .ddc: nil
-        }
-    }
 }
