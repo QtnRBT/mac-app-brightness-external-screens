@@ -16,6 +16,10 @@ final class StatusItemController: NSObject {
     private let panel = FloatingPanel()
     private let presentation = PanelPresentation()
     private var isClosing = false
+    /// When a click outside last dismissed the panel. The menu bar item is
+    /// drawn by the system, so clicking it to close first reaches our global
+    /// monitor (mouse down) and only then the item's action (mouse up).
+    private var lastOutsideDismissal: Date?
     private var anchor: Anchor?
     private var monitors: [Any] = []
     private var activationObserver: NSObjectProtocol?
@@ -38,6 +42,11 @@ final class StatusItemController: NSObject {
     var isPanelShown: Bool { panel.isVisible && !isClosing }
 
     @objc private func statusItemClicked(_ sender: Any?) {
+        if let dismissal = lastOutsideDismissal, Date().timeIntervalSince(dismissal) < 0.5 {
+            // This click already closed the panel via the global monitor.
+            lastOutsideDismissal = nil
+            return
+        }
         if isPanelShown {
             closePanel()
         } else {
@@ -181,7 +190,10 @@ final class StatusItemController: NSObject {
         if let global = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown],
             handler: { [weak self] _ in
-                MainActor.assumeIsolated { self?.closePanel() }
+                MainActor.assumeIsolated {
+                    self?.lastOutsideDismissal = Date()
+                    self?.closePanel()
+                }
             }
         ) {
             monitors.append(global)
@@ -221,3 +233,4 @@ final class StatusItemController: NSObject {
         activationObserver = nil
     }
 }
+
