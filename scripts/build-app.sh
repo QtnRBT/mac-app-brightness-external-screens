@@ -38,6 +38,8 @@ if xcrun actool Resources/AppIcon.icon --compile "$APP/Contents/Resources" \
         --output-format human-readable-text --errors --warnings \
     && [[ -s "$APP/Contents/Resources/Assets.car" ]]; then
     /usr/libexec/PlistBuddy -c "Merge $ICON_PLIST" "$APP/Contents/Info.plist"
+    # actool's own .icns tops out at 256 px; macOS 14-15 get the full-size one.
+    cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 else
     if [[ -n "${CI:-}" ]]; then
         echo "error: actool could not compile Resources/AppIcon.icon" >&2
