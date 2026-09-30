@@ -9,6 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.mainMenu = MainMenu.make(settings: settings)
+
         let displays = DisplayController()
         let statusItemController = StatusItemController(controller: displays)
         self.statusItemController = statusItemController
