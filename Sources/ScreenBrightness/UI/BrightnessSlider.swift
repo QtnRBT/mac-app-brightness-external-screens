@@ -90,9 +90,11 @@ private struct SystemBrightnessSlider: View {
     let accessibilityLabel: String
     let onChange: (Double) -> Void
 
-    /// Control Center hides the knob at rest and only shows it (as a glass
-    /// lens) while the slider is being moved.
+    /// Control Center hides the knob at rest, shows it in white while the
+    /// pointer is over the slider, and turns it into a glass lens while the
+    /// slider is being moved.
     @State private var isEditing = false
+    @State private var isHovering = false
 
     var body: some View {
         Slider(
@@ -104,7 +106,10 @@ private struct SystemBrightnessSlider: View {
             onEditingChanged: { isEditing = $0 }
         )
         .labelsHidden()
-        .sliderThumbVisibility(isEditing ? .visible : .hidden)
+        .sliderThumbVisibility(isEnabled && (isHovering || isEditing) ? .visible : .hidden)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.15)) { isHovering = hovering }
+        }
         // Control Center's knob and track proportions.
         .controlSize(.small)
         // Control Center fills its sliders in white, not the accent color.
