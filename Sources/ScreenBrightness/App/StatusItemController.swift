@@ -66,6 +66,7 @@ final class StatusItemController: NSObject {
             installMonitors()
             setButtonHighlighted(true)
             withAnimation(PanelPresentation.showAnimation) { presentation.isPresented = true }
+            panel.setBackdropVisible(true)
             return
         }
 
@@ -86,8 +87,9 @@ final class StatusItemController: NSObject {
 
         panel.makeKeyAndOrderFront(nil)
         // Next turn, so the hidden state is rendered once before animating.
-        DispatchQueue.main.async { [presentation] in
+        DispatchQueue.main.async { [presentation, panel] in
             withAnimation(PanelPresentation.showAnimation) { presentation.isPresented = true }
+            panel.setBackdropVisible(true)
         }
 
         installMonitors()
@@ -99,6 +101,7 @@ final class StatusItemController: NSObject {
         isClosing = true
         removeMonitors()
         setButtonHighlighted(false)
+        panel.setBackdropVisible(false)
         withAnimation(PanelPresentation.hideAnimation, completionCriteria: .logicallyComplete) {
             presentation.isPresented = false
         } completion: { [weak self] in
@@ -137,18 +140,22 @@ final class StatusItemController: NSObject {
         let size = hostingView.fittingSize
         guard size.width > 0, size.height > 0 else { return }
 
+        // Content padding, plus the backdrop's feather on the sides.
         let inset = ModuleMetrics.panelPadding
+        let sideInset = inset + PanelBackdrop.margin
         let screenFrame = anchor.screen.frame
         let menuBarBottom = min(anchor.itemFrame.minY, anchor.screen.visibleFrame.maxY)
 
-        var x = anchor.itemFrame.maxX + inset - size.width
-        let minX = screenFrame.minX + Self.screenMargin - inset
-        let maxX = screenFrame.maxX - Self.screenMargin + inset - size.width
+        var x = anchor.itemFrame.maxX + sideInset - size.width
+        let minX = screenFrame.minX + Self.screenMargin - sideInset
+        let maxX = screenFrame.maxX - Self.screenMargin + sideInset - size.width
         x = min(max(x, minX), maxX)
         let top = menuBarBottom - Self.menuBarGap + inset
 
         panel.setFrame(NSRect(x: x, y: top - size.height, width: size.width, height: size.height), display: true)
-        let iconX = (anchor.itemFrame.midX - x) / size.width
+        // Scale anchor, relative to the animated content (inside the feather).
+        let contentWidth = size.width - 2 * PanelBackdrop.margin
+        let iconX = (anchor.itemFrame.midX - x - PanelBackdrop.margin) / contentWidth
         presentation.anchor = UnitPoint(x: min(max(iconX, 0), 1), y: 0)
     }
 
