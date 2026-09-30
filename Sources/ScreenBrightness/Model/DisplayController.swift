@@ -29,7 +29,14 @@ final class DisplayController {
         queue.async { [hardware] in
             let found = hardware.discover(names: names)
             DispatchQueue.main.async {
-                self.displays = found
+                // A slider still being written wins over the (older) reading.
+                self.displays = found.map { item in
+                    guard self.writeScheduled.contains(item.id),
+                          let local = self.displays.first(where: { $0.id == item.id }) else { return item }
+                    var merged = item
+                    merged.brightness = local.brightness
+                    return merged
+                }
                 self.isRefreshing = false
             }
         }
