@@ -4,7 +4,7 @@ import SwiftUI
 /// Control Center–style brightness slider.
 ///
 /// On macOS 26+ this is the system `Slider`: white fill and white pill knob
-/// hidden at rest, that turns into a Liquid Glass lens while it is dragged, exactly like
+/// hidden at rest and faded in on hover, that turns into a Liquid Glass lens while it is dragged, exactly like
 /// Control Center's own sliders ("For controls like sliders and toggles, the
 /// knob transforms into Liquid Glass during interaction" — Adopting Liquid
 /// Glass). Drawing that knob by hand would only imitate it. Older systems get
@@ -16,6 +16,9 @@ struct BrightnessSlider: View {
     /// Current value, 0...1.
     let value: Double
     let isEnabled: Bool
+    /// Whether the pointer is over the enclosing module (Control Center shows
+    /// the knob for the whole module, not just the track).
+    let showsKnob: Bool
     let accessibilityLabel: String
     let onChange: (Double) -> Void
 
@@ -25,11 +28,13 @@ struct BrightnessSlider: View {
     init(
         value: Double,
         isEnabled: Bool = true,
+        showsKnob: Bool = false,
         accessibilityLabel: String,
         onChange: @escaping (Double) -> Void
     ) {
         self.value = value
         self.isEnabled = isEnabled
+        self.showsKnob = showsKnob
         self.accessibilityLabel = accessibilityLabel
         self.onChange = onChange
     }
@@ -48,6 +53,7 @@ struct BrightnessSlider: View {
             SystemBrightnessSlider(
                 value: value,
                 isEnabled: isEnabled,
+                showsKnob: showsKnob,
                 accessibilityLabel: accessibilityLabel,
                 onChange: onChange
             )
@@ -87,36 +93,54 @@ private func percentText(_ value: Double) -> String {
 private struct SystemBrightnessSlider: View {
     let value: Double
     let isEnabled: Bool
+    let showsKnob: Bool
     let accessibilityLabel: String
     let onChange: (Double) -> Void
 
-    /// Control Center hides the knob at rest, shows it in white while the
-    /// pointer is over the slider, and turns it into a glass lens while the
-    /// slider is being moved.
     @State private var isEditing = false
-    @State private var isHovering = false
+
+    /// Control Center hides the knob at rest, fades it in (white) while the
+    /// pointer is over the module, and turns it into a glass lens while the
+    /// slider is being moved.
+    private var knobVisible: Bool { isEnabled && (showsKnob || isEditing) }
 
     var body: some View {
+        // `sliderThumbVisibility` switches the knob instantly, which blinks.
+        // Two identical system sliders — knob hidden / knob shown — are
+        // cross-faded instead, so only the knob appears to fade.
+        ZStack {
+            slider(thumb: .hidden)
+                .opacity(knobVisible ? 0 : 1)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            slider(thumb: .visible)
+                // Not exactly 0: stays hit-testable for a click that lands
+                // before the fade-in has progressed.
+                .opacity(knobVisible ? 1 : 0.001)
+                .accessibilityLabel(accessibilityLabel)
+                .accessibilityValue(isEnabled ? percentText(value) : "Indisponible")
+        }
+        .animation(.easeInOut(duration: 0.22), value: knobVisible)
+        // Control Center's knob and track proportions.
+        .controlSize(.small)
+        // Control Center fills its sliders in white, not the accent color.
+        .tint(.white)
+        .disabled(!isEnabled)
+    }
+
+    private func slider(thumb: Visibility) -> some View {
         Slider(
             value: Binding(
                 get: { isEnabled ? min(max(value, 0), 1) : 0 },
                 set: { onChange($0) }
             ),
             in: 0...1,
-            onEditingChanged: { isEditing = $0 }
+            onEditingChanged: { editing in
+                withAnimation(.easeInOut(duration: 0.22)) { isEditing = editing }
+            }
         )
         .labelsHidden()
-        .sliderThumbVisibility(isEnabled && (isHovering || isEditing) ? .visible : .hidden)
-        .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.15)) { isHovering = hovering }
-        }
-        // Control Center's knob and track proportions.
-        .controlSize(.small)
-        // Control Center fills its sliders in white, not the accent color.
-        .tint(.white)
-        .disabled(!isEnabled)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(isEnabled ? percentText(value) : "Indisponible")
+        .sliderThumbVisibility(thumb)
     }
 }
 

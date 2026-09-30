@@ -6,6 +6,8 @@ struct DisplayModuleView: View {
     let display: DisplayItem
     let onChange: (Double) -> Void
 
+    @State private var isHovering = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
@@ -32,6 +34,7 @@ struct DisplayModuleView: View {
                 BrightnessSlider(
                     value: display.brightness,
                     isEnabled: display.isControllable,
+                    showsKnob: isHovering,
                     accessibilityLabel: "Luminosité de \(display.name)",
                     onChange: onChange
                 )
@@ -55,6 +58,8 @@ struct DisplayModuleView: View {
         .padding(.bottom, caption == nil ? 10 : 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .moduleBackground()
+        .contentShape(RoundedRectangle(cornerRadius: ModuleMetrics.cornerRadius, style: .continuous))
+        .onHover { isHovering = $0 }
         .accessibilityElement(children: .contain)
     }
 
