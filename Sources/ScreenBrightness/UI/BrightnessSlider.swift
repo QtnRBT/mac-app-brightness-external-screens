@@ -4,7 +4,7 @@ import SwiftUI
 /// Control Center–style brightness slider.
 ///
 /// On macOS 26+ this is the system `Slider`: white fill and white pill knob
-/// that turns into a Liquid Glass lens while it is dragged, exactly like
+/// hidden at rest, that turns into a Liquid Glass lens while it is dragged, exactly like
 /// Control Center's own sliders ("For controls like sliders and toggles, the
 /// knob transforms into Liquid Glass during interaction" — Adopting Liquid
 /// Glass). Drawing that knob by hand would only imitate it. Older systems get
@@ -90,15 +90,21 @@ private struct SystemBrightnessSlider: View {
     let accessibilityLabel: String
     let onChange: (Double) -> Void
 
+    /// Control Center hides the knob at rest and only shows it (as a glass
+    /// lens) while the slider is being moved.
+    @State private var isEditing = false
+
     var body: some View {
         Slider(
             value: Binding(
                 get: { isEnabled ? min(max(value, 0), 1) : 0 },
                 set: { onChange($0) }
             ),
-            in: 0...1
+            in: 0...1,
+            onEditingChanged: { isEditing = $0 }
         )
         .labelsHidden()
+        .sliderThumbVisibility(isEditing ? .visible : .hidden)
         // Control Center's knob and track proportions.
         .controlSize(.small)
         // Control Center fills its sliders in white, not the accent color.
