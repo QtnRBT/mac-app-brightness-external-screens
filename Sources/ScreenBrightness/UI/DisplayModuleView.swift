@@ -43,18 +43,28 @@ struct DisplayModuleView: View {
             .foregroundStyle(.secondary)
             .opacity(display.isControllable ? 1 : 0.5)
 
-            if !display.isControllable {
-                Text("DDC non supporté par cet écran")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+            if let caption {
+                Text(caption)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
                     .padding(.top, -2)
             }
         }
         .padding(.horizontal, 14)
         .padding(.top, 12)
-        .padding(.bottom, display.isControllable ? 10 : 9)
+        .padding(.bottom, caption == nil ? 10 : 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .moduleBackground()
         .accessibilityElement(children: .contain)
+    }
+
+    /// Small secondary line under the slider, only when there is something
+    /// the user should know.
+    private var caption: String? {
+        switch display.backend {
+        case .unsupported: "DDC non supporté par cet écran"
+        case .software: "Atténuation logicielle"
+        case .builtIn, .ddc: nil
+        }
     }
 }
