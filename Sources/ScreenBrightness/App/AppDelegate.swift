@@ -6,10 +6,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
     private var brightnessKeys: BrightnessKeyController?
     private let osd = OSDController()
+    private let settings = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.mainMenu = MainMenu.make(settings: settings)
+
         let displays = DisplayController()
-        let statusItemController = StatusItemController(controller: displays)
+        let statusItemController = StatusItemController(controller: displays) { [settings] in
+            settings.showWindow(nil)
+        }
         self.statusItemController = statusItemController
 
         // Keyboard brightness keys → screen under the pointer.
@@ -23,6 +28,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ProcessInfo.processInfo.arguments.contains("--show-panel") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 statusItemController.showPanel()
+            }
+        }
+
+        // `--show-settings`: opens the settings window at launch, for
+        // screenshots.
+        if ProcessInfo.processInfo.arguments.contains("--show-settings") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [settings] in
+                settings.showWindow(nil)
             }
         }
 

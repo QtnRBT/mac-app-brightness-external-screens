@@ -4,11 +4,10 @@ import SwiftUI
 /// are injected, so it renders with fake state.
 struct PanelFooterView: View {
     let isRefreshing: Bool
-    @Binding var launchAtLogin: Bool
-    @Binding var functionKeys: Bool
     /// Accessibility not granted yet: show the row that asks for it.
     let needsKeyAccess: Bool
     let onRequestKeyAccess: () -> Void
+    let onOpenSettings: () -> Void
     let onRefresh: () -> Void
     let onQuit: () -> Void
 
@@ -18,16 +17,18 @@ struct PanelFooterView: View {
                 keyAccessRow
             }
 
-            VStack(spacing: 6) {
-                switchRow("Ouvrir au démarrage", isOn: $launchAtLogin)
-                switchRow("Touches F1/F2 pour la luminosité", isOn: $functionKeys)
-                    .help("Pour les claviers qui envoient F1/F2 au lieu des touches de luminosité")
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .moduleBackground(cornerRadius: 14)
-
             HStack(spacing: 8) {
+                // Like Control Center's "Modifier les commandes".
+                Button(action: onOpenSettings) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text("Réglages…")
+                    }
+                }
+                .keyboardShortcut(",")
+                .help("Ouvrir les réglages de Screen Brightness")
+
                 Button(action: onRefresh) {
                     HStack(spacing: 4) {
                         if isRefreshing {
@@ -52,18 +53,6 @@ struct PanelFooterView: View {
                 .keyboardShortcut("q")
             }
             .footerButtonStyle()
-        }
-    }
-
-    private func switchRow(_ title: String, isOn: Binding<Bool>) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 12))
-            Spacer(minLength: 8)
-            Toggle(title, isOn: isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
         }
     }
 
