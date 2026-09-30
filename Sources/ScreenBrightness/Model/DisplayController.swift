@@ -57,6 +57,41 @@ final class DisplayController {
         flushWrite(for: id)
     }
 
+    /// Moves brightness one step of `delta` (e.g. ±1/16) the way the Mac's
+    /// brightness keys do: from a value between two steps, the first press
+    /// lands on the next step in that direction instead of adding `delta`.
+    /// Returns the new level, or `nil` if the screen is unknown or not
+    /// controllable.
+    @discardableResult
+    func adjustBrightness(by delta: Double, for id: CGDirectDisplayID) -> Double? {
+        guard let display = displays.first(where: { $0.id == id }), display.isControllable else { return nil }
+        setBrightness(Self.steppedBrightness(from: display.brightness, by: delta), for: id)
+        return displays.first(where: { $0.id == id })?.brightness
+    }
+
+    /// Screen under the mouse pointer, if it is one of `displays`.
+    func displayUnderPointer() -> DisplayItem? {
+        let mouse = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }),
+              let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else { return nil }
+        return displays.first(where: { $0.id == number.uint32Value })
+    }
+
+    /// Next multiple of `|delta|` above (`delta > 0`) or below `value`,
+    /// clamped to 0...1. Values within a hair of a step count as on it, so
+    /// a level read back as 0.49999 still moves a full step.
+    nonisolated static func steppedBrightness(from value: Double, by delta: Double) -> Double {
+        let step = abs(delta)
+        guard step > 0 else { return min(max(value, 0), 1) }
+        let position = value / step
+        let tolerance = 0.001
+        let target = delta > 0
+            ? (floor(position + tolerance) + 1) * step
+            : (ceil(position - tolerance) - 1) * step
+        return min(max(target, 0), 1)
+    }
+
     private func flushWrite(for id: CGDirectDisplayID) {
         guard let value = pendingWrites.removeValue(forKey: id) else {
             writeScheduled.remove(id)

@@ -8,6 +8,7 @@ Petite app de barre des menus macOS pour régler la luminosité **de chaque écr
 - Écran externe sans DDC : gradation logicielle seule (gamma) sur toute la plage.
 - Écran intégré (MacBook, iMac) piloté via le framework système DisplayServices.
 - Détection automatique au branchement / débranchement / réveil.
+- **Touches de luminosité du clavier** : elles règlent l'écran sous le pointeur, comme sur un MacBook (pas de 1/16, ou 1/64 avec ⌥⇧), avec un indicateur Liquid Glass en haut à droite de cet écran. Option « Touches F1/F2 pour la luminosité » pour les claviers qui envoient F1/F2 au lieu des codes de luminosité.
 - Option « Ouvrir au démarrage ».
 
 ## Prérequis
@@ -18,6 +19,8 @@ Petite app de barre des menus macOS pour régler la luminosité **de chaque écr
 - Un moniteur avec **DDC/CI activé** dans son menu OSD (c'est le cas par défaut sur la plupart).
 
 > ⚠️ Sur le port HDMI intégré de certains Mac (Mac mini M1, MacBook Pro M1/M2), le DDC ne passe pas : préférez USB‑C/DisplayPort. L'écran est alors assombri uniquement en logiciel (gamma), sans toucher au rétroéclairage.
+
+> ⌨️ Les touches de luminosité passent par un *event tap*, qui exige l'accès **Accessibilité** : cliquez « Autoriser les touches de luminosité… » dans le panneau, puis activez Screen Brightness dans Réglages Système › Confidentialité et sécurité › Accessibilité (pris en compte sans relancer). L'app étant signée ad‑hoc, cette autorisation est à refaire après chaque recompilation (retirer l'app de la liste avec « − », puis l'y réautoriser).
 
 ## Installer
 
@@ -45,7 +48,8 @@ Sources/ScreenBrightness/
 │   ├── BuiltInDisplay.swift      écran intégré via DisplayServices
 │   ├── GammaDimmer.swift         gradation logicielle : table gamma d'origine × facteur
 │   └── DisplayHardware.swift     découverte + routage, répartition DDC / gamma (seuil 20 %)
-└── UI/                           panneau façon Centre de contrôle
+├── Keys/                         touches de luminosité : event tap, décodage, accès Accessibilité
+└── UI/                           panneau façon Centre de contrôle, indicateur (OSD)
 ```
 
 Tout l'accès matériel passe par une file série en arrière-plan ; un drag de slider n'envoie jamais plus d'une commande DDC en vol par écran.

@@ -5,19 +5,23 @@ import SwiftUI
 struct PanelFooterView: View {
     let isRefreshing: Bool
     @Binding var launchAtLogin: Bool
+    @Binding var functionKeys: Bool
+    /// Accessibility not granted yet: show the row that asks for it.
+    let needsKeyAccess: Bool
+    let onRequestKeyAccess: () -> Void
     let onRefresh: () -> Void
     let onQuit: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
-                Text("Ouvrir au démarrage")
-                    .font(.system(size: 12))
-                Spacer(minLength: 8)
-                Toggle("Ouvrir au démarrage", isOn: $launchAtLogin)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.mini)
+            if needsKeyAccess {
+                keyAccessRow
+            }
+
+            VStack(spacing: 6) {
+                switchRow("Ouvrir au démarrage", isOn: $launchAtLogin)
+                switchRow("Touches F1/F2 pour la luminosité", isOn: $functionKeys)
+                    .help("Pour les claviers qui envoient F1/F2 au lieu des touches de luminosité")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
@@ -49,6 +53,42 @@ struct PanelFooterView: View {
             }
             .footerButtonStyle()
         }
+    }
+
+    private func switchRow(_ title: String, isOn: Binding<Bool>) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 12))
+            Spacer(minLength: 8)
+            Toggle(title, isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+        }
+    }
+
+    /// Unobtrusive call to action: the brightness keys need Accessibility.
+    private var keyAccessRow: some View {
+        Button(action: onRequestKeyAccess) {
+            HStack(spacing: 7) {
+                Image(systemName: "keyboard")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Text("Autoriser les touches de luminosité…")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.primary)
+                    // One line, so the panel's measured height stays exact.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .moduleBackground(cornerRadius: 14)
+        .help("Les touches de luminosité du clavier ont besoin de l'accès Accessibilité (Réglages Système › Confidentialité et sécurité › Accessibilité)")
     }
 }
 
