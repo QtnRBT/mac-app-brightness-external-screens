@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
     private var brightnessKeys: BrightnessKeyController?
     private let osd = OSDController()
+    private let settings = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let displays = DisplayController()
@@ -23,6 +24,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ProcessInfo.processInfo.arguments.contains("--show-panel") {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 statusItemController.showPanel()
+            }
+        }
+
+        // `--show-settings`: opens the settings window at launch, for
+        // screenshots.
+        if ProcessInfo.processInfo.arguments.contains("--show-settings") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [settings] in
+                settings.showWindow(nil)
             }
         }
 
